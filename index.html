@@ -5,58 +5,80 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Twitch Streaming Site</title>
     <style>
+        :root {
+            --background-color: #121212;
+            --text-color: #e0e0e0;
+            --card-background: #1e1e1e;
+            --primary-color: #bb86fc;
+        }
+
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
-            color: #333;
+            background-color: var(--background-color);
+            color: var(--text-color);
         }
+
         header {
-            background: #333;
+            background: var(--primary-color);
             color: #fff;
             padding: 1rem;
             text-align: center;
         }
+
         .container {
             max-width: 800px;
             margin: 2rem auto;
             padding: 1rem;
-            background: #fff;
+            background: var(--card-background);
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
         }
+
         .button {
             display: inline-block;
             padding: 0.5rem 1rem;
             color: #fff;
-            background: #007BFF;
+            background: var(--primary-color);
             text-decoration: none;
             border-radius: 4px;
         }
+
         .button:hover {
-            background: #0056b3;
+            background: #9d65e6;
         }
+
         .matchup-guide {
             margin-top: 2rem;
         }
+
         .matchup-guide h3 {
             margin-bottom: 1rem;
         }
+
         .champion {
             margin-bottom: 1rem;
             padding: 0.5rem;
-            background: #e9e9e9;
+            background: var(--card-background);
             border-radius: 4px;
         }
+
         .search {
             margin-bottom: 1rem;
         }
+
         .search input {
             width: 100%;
             padding: 0.5rem;
-            border: 1px solid #ccc;
+            border: 1px solid #333;
             border-radius: 4px;
+            background: var(--card-background);
+            color: var(--text-color);
+        }
+
+        .search input::placeholder {
+            color: #888;
         }
     </style>
 </head>
@@ -82,31 +104,41 @@
     </div>
 
     <script>
-        const searchInput = document.getElementById('search');
-        const championList = document.getElementById('champion-list');
-
         async function fetchChampions() {
+            const apiURL = 'https://ddragon.leagueoflegends.com/cdn/13.1.1/data/en_US/champion.json';
+            const localTipsURL = 'champions.json';
             try {
-                const response = await fetch('champions.json');
-                if (!response.ok) {
-                    throw new Error('Failed to load champion data');
-                }
-                const champions = await response.json();
-                renderChampions(champions);
+                // Fetch champion data from Riot API
+                const apiResponse = await fetch(apiURL);
+                const apiData = await apiResponse.json();
+                const apiChampions = Object.keys(apiData.data).map(key => ({
+                    name: apiData.data[key].name,
+                    tip: null // Placeholder, to be replaced by local tips
+                }));
 
-                searchInput.addEventListener('input', (e) => {
-                    const filter = e.target.value.toLowerCase();
-                    const filteredChampions = champions.filter(champion => 
-                        champion.name.toLowerCase().includes(filter)
-                    );
-                    renderChampions(filteredChampions);
+                // Fetch local tips
+                const localResponse = await fetch(localTipsURL);
+                const localTips = await localResponse.json();
+
+                // Merge data
+                const combinedData = apiChampions.map(apiChampion => {
+                    const localTip = localTips.find(tip => tip.name === apiChampion.name);
+                    return {
+                        name: apiChampion.name,
+                        tip: localTip ? localTip.tip : `Placeholder tip for ${apiChampion.name}`
+                    };
                 });
+
+                renderChampions(combinedData);
+
             } catch (error) {
-                championList.innerHTML = `<p>Error loading champion data: ${error.message}</p>`;
+                console.error('Error fetching champion data:', error);
+                document.getElementById('champion-list').innerHTML = `<p>Error loading champion data</p>`;
             }
         }
 
         function renderChampions(champions) {
+            const championList = document.getElementById('champion-list');
             championList.innerHTML = '';
             champions.forEach(champion => {
                 const div = document.createElement('div');
@@ -116,6 +148,7 @@
             });
         }
 
+        // Call the fetchChampions function on page load
         fetchChampions();
     </script>
 </body>
