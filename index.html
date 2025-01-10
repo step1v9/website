@@ -107,10 +107,17 @@
         let allChampions = []; // Store fetched data globally for search functionality
 
 async function fetchChampions() {
-    const apiURL = 'https://ddragon.leagueoflegends.com/cdn/13.1.1/data/en_US/champion.json';
-    const localTipsURL = 'champions.json';
     try {
-        // Fetch champion data from Riot API
+        // Step 1: Fetch the latest patch version
+        const patchResponse = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+        const patches = await patchResponse.json();
+        const latestPatch = patches[0]; // The latest patch version is always the first element
+
+        // Step 2: Use the latest patch version in the champion data URL
+        const apiURL = `https://ddragon.leagueoflegends.com/cdn/${latestPatch}/data/en_US/champion.json`;
+        const localTipsURL = 'champions.json';
+
+        // Step 3: Fetch champion data and local tips
         const apiResponse = await fetch(apiURL);
         const apiData = await apiResponse.json();
         const apiChampions = Object.keys(apiData.data).map(key => ({
@@ -118,7 +125,6 @@ async function fetchChampions() {
             tip: null // Placeholder, to be replaced by local tips
         }));
 
-        // Fetch local tips
         const localResponse = await fetch(localTipsURL);
         const localTips = await localResponse.json();
 
@@ -162,6 +168,7 @@ function renderChampions(champions) {
 
 // Call the fetchChampions function on page load
 fetchChampions();
+
     </script>
 </body>
 </html>
